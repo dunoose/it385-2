@@ -1,0 +1,43 @@
+- hosts: web
+  gather_facts: false
+  remote_user: justincase
+  become: true
+  tasks: 
+  - name: Updates
+   apt:
+   update_cache: yes
+
+  - name: Install NGINX web server
+  apt:
+   name: nginx
+   state: latest
+   update_cache: yes
+
+  - name: Create target web folder
+    file:
+     path: /var/www/html
+     mode: 0755
+
+  - name: Deploy custom web pages
+    copy:
+     src: ~/Downloads/timups-html/
+     dest: /var/www/html
+
+- hosts: db 
+  become: true
+  gather_facts: false 
+
+  tasks:
+   - name: Install MariaDB packages
+    apt:
+     name: {{ item }}
+     state: present
+     update_cache: yes 
+   with_items:
+     - mariadb-client
+     - mariadb-common
+     - mariadb-server
+   - name: Start MariaDB service
+    service:
+     name: mysql
+     state: started

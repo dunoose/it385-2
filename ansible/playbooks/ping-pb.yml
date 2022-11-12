@@ -1,0 +1,8 @@
+#- name: Simple Ping Playbook
+# Simple ping playbook
+- hosts: web
+  remote_user: justincase
+
+- tasks:
+  name: Ping web servers
+  ping 

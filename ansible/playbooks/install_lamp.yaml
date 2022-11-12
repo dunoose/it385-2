@@ -1,0 +1,35 @@
+
+- hosts: test
+  become: yes
+  tasks:
+   - name: Install LAMP packages on remote
+     apt: 
+      pkg:
+       - apache2
+       - mysql-server
+       - php
+       - php-mysql
+      state: latest
+  handlers:
+  - name: start apache
+    service:
+     name: apache2
+     state: started
+     enabled: yes
+
+  - name: start mysql-server
+    service:
+     name: mysql
+     state: started
+     enabled: yes
+
+  - name: create target directory
+    file: 
+     path: /var/www/html
+     state: directory
+     mode: 0755
+  
+  - name: "Deploy custom web pages" #With quotes
+    copy:
+      src: ~/Downloads/timups-html/
+      dest: /var/www/html/ 

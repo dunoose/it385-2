@@ -1,0 +1,27 @@
+#Install Web pages on web server
+
+- hosts: web 
+  gather_facts: false
+  remote_user: justincase
+  become: true
+  tasks:
+  - name: Run the equivalent of "apt-get update"
+    apt:
+      update_cache: yes
+
+  - name: Install NGINX web server
+    apt:
+      name: nginx
+      state: latest
+      update_cache: yes
+          
+  - name: Make html folder accessible #You can do either quotes or no quotes
+    file: 
+      path: /var/www/html
+      state: directory
+      mode: 0755
+
+  - name: "Deploy custom web pages" #With quotes
+    copy:
+      src: ~/Downloads/timups-html/
+      dest: /var/www/html/ 

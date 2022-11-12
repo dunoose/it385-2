@@ -1,0 +1,38 @@
+- hosts: db
+  become: true
+  gather_facts: false
+
+  tasks:
+  - name: Install MariaDB packages
+    apt: 
+      name: "{{ item }}" #Using a Variable here
+      state: present
+      update-cache: yes
+    with_items:
+      -mariadb-client
+      -mariadb-common
+      -mariadb-server
+  - name: Start MariaDB service
+     service:
+      name: mysql
+      state: started
+
+
+- hosts: db 
+  become: true
+  gather_facts: false 
+
+  tasks:
+  - name: Install MariaDB packages
+    apt:
+     name: "{{ item }}"
+     state: present
+     update_cache: yes 
+    with_items:
+     - mariadb-client
+     - mariadb-common
+     - mariadb-server
+  - name: Start MariaDB service
+     service:
+      name: mysql
+      state: started

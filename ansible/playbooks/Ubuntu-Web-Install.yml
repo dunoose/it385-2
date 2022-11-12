@@ -1,0 +1,26 @@
+- hosts: web
+  become: true
+  gather_facts: false
+
+  tasks:
+
+    - name: 
+      apt: 
+        update_cache: yes
+
+    - name: Install NGINX web server
+      apt:
+        name: nginx
+        state: latest
+        update_cache: yes
+
+    - name:  Create target web folder
+      file:
+        path: /var/www/html
+        state: directory
+        mode: 0755
+
+    - name: Deploy custome web pages
+      copy:
+        src: ~/Downloads/eatveg/eatveg/eatveg-html/
+        dest: /var/www/html/
