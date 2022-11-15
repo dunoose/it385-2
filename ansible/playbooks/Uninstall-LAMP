@@ -23,7 +23,7 @@
      apt:
       name: nginx
       state: absent
-   - name: Deploy custom web pages
+   - name: Delete Custom Web Page
      file:
       path: /var/www/html
       state: absent
