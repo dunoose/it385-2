@@ -23,6 +23,10 @@
      apt:
       name: nginx
       state: absent
+   - name: Deploy custom web pages
+     file:
+      path: /var/www/html
+      state: absent
 - hosts: db
   become: true
   gather_facts: false
