@@ -1,0 +1,38 @@
+- hosts: web
+  gather_facts: false
+  remote_user: justincase
+  become: true
+  tasks:
+   - name: Uninstall Apache2
+     apt:
+      pkg:
+       - apache2
+      state: absent 
+   - name: Uninstall PHP
+     apt:
+      pkg:
+       - php
+       - php-mysql
+      state: absent
+   - name: Uninstall mysql
+     apt:    
+       pkg: 
+        - mysql-server
+       state: absent
+   - name: Uninstall NGINX web server
+     apt:
+      name: nginx
+      state: absent
+- hosts: db
+  become: true
+  gather_facts: false
+  tasks:
+   - name: Uninstall MariaDB packages
+     apt:
+      name: "{{ item }}"
+      state: absent
+     with_items: 
+      - mariadb-client
+      - mariadb-common
+      - mariadb-server
+
