@@ -1,0 +1,10 @@
+- hosts: csr1
+
+  tasks:
+  - name: "update hostname to 'csr1'"
+    ios_command:
+     commands: 
+     - conf t
+     - hostname CSR1
+     - exit
+     - wr mem

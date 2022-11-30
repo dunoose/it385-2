@@ -1,0 +1,71 @@
+# Configure router interfaces
+
+- name: configure csr1
+  gather_facts: false
+  hosts: csr1
+  tasks:
+  - name: Gigabit interfaces configuration
+    ios_command:
+     commands:
+      - configure terminal
+      - interface gigabitethernet 3
+      - ip address 10.15.12.1 255.255.255.0
+      - no shutdown
+      - interface gigabitethernet 2
+      - ip address 172.16.1.1 255.255.255.252
+      - no shutdown
+
+- name: configure csr2
+  gather_facts: false
+  hosts: csr2
+  tasks:
+  - name: Gigabit interfaces configuration
+    ios_command:
+     commands:
+      - configure terminal
+      - interface gigabitethernet 3
+      - ip address 10.75.98.1 255.255.255.0
+      - no shutdown
+      - interface gigabitethernet 2
+      - ip address 172.16.1.2 255.255.255.252
+      - no shutdown
+
+- name: configure S1
+  gather_facts: false
+  hosts: S1
+  tasks: 
+  - name: SVI configuration
+    ios_command:
+     commands:
+      - interface vlan1
+      - ip address 10.15.2.2 255.255.255.255
+
+- name: configure S2
+  gather_facts: false
+  hosts: S2
+  tasks:
+  - name: SVI configuration
+    ios_command:
+     commands:
+      - interface vlan2
+      - ip address 10.78.98.2 255.255.255.0
+
+# Configure routes for both R1 and R2
+
+- name: Route for R1
+  gather_facts: false
+  hosts: CSR1
+  tasks: 
+  - name: Adding Route to 10.75.98.1 network
+    ios_command:
+     commands: 
+      - ip route 10.75.98.0 255.255.255.0 gigabitethernet2
+
+- name: Route for R2
+  gather_facts: false
+  hosts: CSR2
+  tasks: 
+  - name: Adding Route to 10.15.12.1 network 
+    ios_command:
+     commands: 
+      - ip route 10.15.12.0 255.255.255.0 gigabitethernet2

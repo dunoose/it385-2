@@ -22,3 +22,23 @@ db1
 [prod]
 web2
 db2
+
+# common variables
+[all:vars]
+#ansible_user:justincase
+gather_facts=false
+
+[web:vars]
+ansible_user=steve
+#ansible_password='Password01'
+ansible_python_interpreter=/usr/bin/python3
+ansible_ssh_user=justincase
+#ansible_ssh_pass='Password01'
+#ansible_become_pass='Password01'
+
+[routers:vars]
+ansible_ssh_user=cisco
+ansible_ssh_pass=cisco
+ansible_network_os=ios
+ansible_connection=network_cli
+ansible_become_method=enable

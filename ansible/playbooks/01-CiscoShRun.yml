@@ -1,0 +1,16 @@
+- hosts: routers
+  gather_facts: false
+  #connection: local
+  connection: ansible.netcommon.network_cli
+
+  tasks:
+  - name: "running show run on cisco devices"
+    ios_command:
+     commands:
+     - sh run
+
+    register: shrun_variable
+  
+  - name: Report information in shrun_variable
+    debug:
+     var: shrun_variable

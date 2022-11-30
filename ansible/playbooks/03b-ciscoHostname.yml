@@ -1,0 +1,7 @@
+- hosts: routers
+
+  tasks: 
+   - name: 'changing hostname using iso_config: IT385-csr1'
+     ios_config:
+      #lines: hostname IT385-CSR1
+      lines: hostname {{inventory_hostname}}

@@ -1,0 +1,185 @@
+#basic config for both R1 and R2
+- name: configure routers Inventory
+  gather_facts: no
+  hosts: routers
+  tasks:
+  
+  - name: Disable DNS Lookup
+    ios_config:
+     commands:
+     - no ip domain-lookup
+  
+  - name: Sets password length min to 10 & encrypts plaintext passwords
+    ios_config:
+     commands:
+      - security passwords min-length 10
+      - service password-encryption
+
+  - name: configure the login banner
+    ios_banner: 
+     banner: login
+     text: Unauthorized Access is Prohibited
+     state: present
+
+  - name: Assign privileged EXEC mode password
+    ios_config:
+     commands: 
+      - enable secret Ciscoenpa55
+  
+  - name: Assign privileged Exec mode password
+    ios_config:
+     commands:
+     - enable secret Ciscoenpa55
+
+  - name: Assign console password & timeout
+    ios_config:
+     parents: "line con 0"
+     lines:
+      - password Ciscoconpa55
+      - login
+      - exec-timeout 300
+      - login block-for 180 attempts 4 within 120
+
+  - name: Assign VTY timeout
+    ios_config:
+     parents: "line vty 0 4"
+     lines:
+      - exec-timeout 300
+      - login block-for 180 attempts 4 within 120
+    
+  - name: Assign VTY timeout
+    ios_config: 
+     parents: "line vty 5 15"
+     lines:
+      - exec-timeout 300
+      - login block-for 180 attempts 4 within 120
+
+#basic config for S1 and S2
+- name: configure Switches 
+  gather_facts: no 
+  hosts: switches
+  tasks:
+   
+  - name: Disable DNS Lookup
+    ios_config:
+     commands:
+     - no ip domain-lookup
+  
+  - name: Sets password length min to 10 & encrypts plaintext passwords
+    ios_config:
+     commands:
+      - security passwords min-length 10
+      - service password-encryption
+
+  - name: configure the login banner
+    ios_banner: 
+     banner: login
+     text: Unauthorized Access is Prohibited
+     state: present
+
+  - name: Assign privileged EXEC mode password
+    ios_config:
+     commands: 
+      - enable secret Ciscoenpa55
+  
+  - name: Assign privileged Exec mode password
+    ios_config:
+     commands:
+     - enable secret Ciscoenpa55
+
+  - name: Assign console password & timeout
+    ios_config:
+     parents: "line con 0"
+     lines:
+      - password Ciscoconpa55
+      - login
+      - exec-timeout 300
+      - login block-for 180 attempts 4 within 120
+
+  - name: Assign VTY timeout
+    ios_config:
+     parents: "line vty 0 4"
+     lines:
+      - exec-timeout 300
+      - login block-for 180 attempts 4 within 120
+    
+  - name: Assign VTY timeout
+    ios_config: 
+     parents: "line vty 5 15"
+     lines:
+      - exec-timeout 300
+      - login block-for 180 attempts 4 within 120
+    
+# Configure router interfaces
+
+- name: configure R1
+  gather_facts: false
+  hosts: R1
+  tasks:
+  - name: Gigabit interfaces configuration
+    ios_command:
+     commands:
+      - configure terminal
+      - interface gigabitethernet 3
+      - ip address 10.15.12.1 255.255.255.0
+      - no shutdown
+      - interface gigabitethernet 2
+      - ip address 172.16.1.1 255.255.255.252
+      - no shutdown
+
+- name: configure R2
+  gather_facts: false
+  hosts: R2
+  tasks:
+  - name: Gigabit interfaces configuration
+    ios_command:
+     commands:
+      - configure terminal
+      - interface gigabitethernet 3
+      - ip address 10.75.98.1 255.255.255.0
+      - no shutdown
+      - interface gigabitethernet 2
+      - ip address 172.16.1.2 255.255.255.252
+      - no shutdown
+
+#Configure Switch SVI
+
+- name: configure S1
+  gather_facts: false
+  hosts: S1
+  tasks: 
+  - name: SVI configuration
+    ios_command:
+     commands:
+      - interface vlan1
+      - ip address 10.15.2.2 255.255.255.255
+
+- name: configure S2
+  gather_facts: false
+  hosts: S2
+  tasks:
+  - name: SVI configuration
+    ios_command:
+     commands:
+      - interface vlan2
+      - ip address 10.78.98.2 255.255.255.0
+
+# Configure routes for both R1 and R2
+
+- name: Route for R1
+  gather_facts: false
+  hosts: R1
+  tasks: 
+  - name: Adding Route to 10.75.98.1 network
+    ios_command:
+     commands: 
+      - ip route 10.75.98.0 255.255.255.0 gigabitethernet2
+
+- name: Route for R2
+  gather_facts: false
+  hosts: R2
+  tasks: 
+  - name: Adding Route to 10.15.12.1 network 
+    ios_command:
+     commands: 
+      - ip route 10.15.12.0 255.255.255.0 gigabitethernet2
