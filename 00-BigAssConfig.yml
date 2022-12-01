@@ -1,0 +1,276 @@
+# sample playbook multiple apps deployment
+- hosts: servers
+  gather_facts: false
+  become: true
+  
+  tasks:
+  - name: Install dependencies before starting
+    apt:
+      upgrade: dist
+      update_cache: yes
+    when: ansible_distribution == "Ubuntu"
+   
+- hosts: servers
+  gather_facts: false
+  become: true
+  
+  tasks:
+  - name: create user hal
+    user:
+        name: hal
+        groups: root
+        
+  - name: add ssh-key for hal
+    authorized_key:
+        user: hal
+        key: <copy/paste after creating diff key for hal>
+        
+  - name: add sudoers file for hal
+    copy:
+        src: sudoers_hal
+        dest: /etc/sudoers.d/hal
+        owner: root
+        groups: root
+        mode: 0440
+
+- hosts: web
+  gather_facts: false
+  become: yes
+  
+  tasks:
+  
+  - name: Run the equivalent of "apt-get update"
+    apt:
+      update_cache: yes
+      
+  - name: Install NGINX web server
+    apt:
+      name: nginx
+      state: latest
+      update_cache: yes
+      
+  - name: Start and enable nginx service
+    service:
+      name: nginx
+      state: started
+      enabled: true
+      
+  - name: Create target web folder
+    file:
+      path: /var/www/html
+      state: directory
+      mode: 0755
+      
+  - name: Deploy custom web pages
+    copy:
+      src: ~/Downloads/eatveg/eatveg-html/
+      dest: /var/www/html/
+      
+    # adding NTP service
+  - name: allow ntp through firewall
+	shell: firewall-cmd --add-service=ntp --permanent
+	
+  - name: Reload firewall
+	shell: firewall-cmd --reload
+	
+  - name: Ensure 'chrony' is startedup
+	service: 
+		name: chronyd 
+		state: started 
+		enabled: yes
+	
+  - name: Set the Timezone
+    shell: timedatectl set-timezone America/Los_Angeles
+	
+  - name: INstall NTP
+    apt: name=ntp state=installed
+	
+  - name: Copy over the NTP configuration  
+    copy: src=/tmp/ntp.conf dest=/etc/ntp.conf
+	# See bottom of this file for tmp/ntp.conf
+    
+	notify:
+    - restart ntpd
+	
+  - name: Make sure NTP is stopped
+    service: name=ntpd state=stopped enabled=yes
+	
+  - name: Sync time initially
+	shell: ntpdate 0.centos.pool.ntp.org
+
+  - name: Make sure NTP is started up
+    service: name=ntpd state=restarted enabled=yes
+	
+  - name: Sync hwclock
+	shell: hwclock -w
+	
+  handlers:
+  - name: restart ntpd
+	service: name=ntpd state=restarted
+	
+
+- hosts: db
+
+  tasks:
+  
+  - name: Install MariaDB pacakges
+     apt:
+       name: {{ item }} #using a variable here
+       state: present
+       update_cache: yes
+     with_items:        # this is like a for loop
+       - mariadb-client # {{item}} takes one of these at a time
+       - mariadb-common
+       - mariadb-server
+       
+    - name: Start MariaDB service
+      service:
+        name: mysql
+        state: started
+
+    # adding NTP service
+  - name: allow ntp through firewall
+	shell: firewall-cmd --add-service=ntp --permanent
+	
+  - name: Reload firewall
+	shell: firewall-cmd --reload
+	
+  - name: Ensure 'chrony' is startedup
+	service: 
+		name: chronyd 
+		state: started 
+		enabled: yes
+	
+  - name: Set the Timezone
+    shell: timedatectl set-timezone America/Los_Angeles
+	
+  - name: INstall NTP
+    apt: name=ntp state=installed
+	
+  - name: Copy over the NTP configuration  
+    copy: src=/tmp/ntp.conf dest=/etc/ntp.conf
+	# See bottom of this file for tmp/ntp.conf
+    
+	notify:
+    - restart ntpd
+	
+  - name: Make sure NTP is stopped
+    service: name=ntpd state=stopped enabled=yes
+	
+  - name: Sync time initially
+	shell: ntpdate 0.centos.pool.ntp.org
+
+  - name: Make sure NTP is started up
+    service: name=ntpd state=restarted enabled=yes
+	
+  - name: Sync hwclock
+	shell: hwclock -w
+	
+  handlers:
+  - name: restart ntpd
+	service: name=ntpd state=restarted
+
+- hosts: routers
+  gather_facts: false
+  
+  tasks:
+  
+  - name: Disable DNS Lookup
+    ios_config:
+      commands: 
+      - no ip domain-lookup
+
+  - name: Assign privileged EXEC mode password
+    ios_config:
+      commands: 
+      - enable secret Ciscoenpa55
+
+  - name: Assign console password & timeout
+    ios_config:
+      parents: "line con 0"
+      lines:
+        - password Ciscoconpa55
+        - login
+        - exec-timeout 300
+        - login block-for 180 attempts 4 within 120
+
+  - name: Assign VTY timeout
+    ios_config:
+      parents: "line vty 0 4"
+      lines:
+        - exec-timeout 300
+        - login block-for 180 attempts 4 within 120
+
+  - name: Assign VTY timeout
+    ios_config:
+      parents: "line vty 5 15"
+      lines:
+        - exec-timeout 300
+        - login block-for 180 attempts 4 within 120
+
+  - name: Assign banner motd
+    ios_config:
+      commands:
+      - banner motd "*****WARNING UNAUTHORIZED ACCESS PROHIBITED*****"
+
+  - name: Encrypt plaintext passwords
+    ios_config:
+      commands:
+      - service password-encryption   
+
+  - name: Establish passwd char min
+    ios_config:
+      commands:
+      - security passwords min-length 10
+
+  - name: File prompt quiet
+    ios_config:
+      commands:
+      - file prompt quiet
+
+  - name: Copy run start
+    ios_command:
+      commands:
+      - copy running-config startup-config
+      
+# Make DB servers as File Server using SAMBA      
+- hosts: db
+
+  tasks:
+  
+  - name: Ensure Samba-related packages are installed (Debian).
+    apt:
+        name:
+            - samba
+            - samba-common
+        state: present
+    when: ansible_os_family == 'Debian'
+
+  - name: Ensure Samba is running and set to start on boot.
+    service:
+      name: "{{ samba_daemon }}"
+      state: started
+      enabled: true
+===========================
+ tmp/ntp.conf
+=========================== 
+driftfile /var/lib/ntp/drift
+
+restrict default nomodify notrap nopeer noquery
+
+restrict 127.0.0.1
+restrict ::1
+
+server 0.centos.pool.ntp.org iburst
+
+includefile /etc/ntp/crypto/pw
+
+keys /etc/ntp/keys
+
+disable monitor
+ 
+=============================
+sudoers_hal file contents:
+hal ALL=(ALL) NOPASSWD: ALL
+ 
+ 
